@@ -51,34 +51,51 @@ WHERE company_name IS NOT NULL
 GROUP BY company_name
 
 
+--5.Write a query that returns the five distributors with the highest average movie budget.
 
 
-SELECT*
-FROM revenue
-SELECT*
+SELECT avg (revenue.film_budget), distributors.company_name
 FROM specs
-SELECT*
-FROM rating
-SELECT*
-FROM distributors
-
-5.Write a query that returns the five distributors with the highest average movie budget.
-
-
-
-
+LEFT JOIN revenue
+USING (movie_id)
+LEFT JOIN distributors
+ON specs.domestic_distributor_id = distributors.distributor_id
+WHERE film_budget IS NOT NULL 
+GROUP BY distributors.company_name
+ORDER BY avg (revenue.film_budget) DESC
+LIMIT 5;
 
 
 
+--6.How many movies in the dataset are distributed by a company which is not headquartered in California? Which of these movies has the highest imdb rating?
 
+SELECT distributors.company_name,specs.film_title, rating.imdb_rating,distributors.headquarters
+FROM specs
+LEFT JOIN distributors
+ON specs.domestic_distributor_id = distributors.distributor_id
+LEFT JOIN rating
+USING (movie_id)
+WHERE distributors.headquarters NOT ILIKE  '%, CA%' 
+GROUP BY distributors.company_name, rating.imdb_rating, distributors.headquarters,specs.film_title
+ORDER BY rating.imdb_rating DESC
 
-
-
-
-
-
-
-6.How many movies in the dataset are distributed by a company which is not headquartered in California? Which of these movies has the highest imdb rating?
-
+--answer: 2, Dirty Dancing 
 
 7.Which have a higher average rating, movies which are over two hours long or movies which are under two hours?
+
+
+SELECT movie_length, avg(imdb_rating)
+FROM rating 
+LEFT JOIN (
+ 	SELECT CASE 
+	WHEN length_in_min  > 120 then 'OVER 120'
+	WHEN length_in_min < 120 then 'UNDER 120'
+	ELSE '120' 
+	END as movie_length, movie_id
+	FROM specs
+)
+USING (movie_id)
+GROUP BY movie_length 
+
+--answer: over 120
+
