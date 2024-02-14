@@ -14,14 +14,15 @@ LIMIT 1;
 
 --2.What year has the highest average imdb rating?
 
-SELECT specs.film_title, specs.release_year, rating.imdb_rating
+SELECT specs.release_year, avg (rating.imdb_rating)
 FROM specs
-LEFT JOIN rating
+INNER JOIN rating
 USING (movie_id)
-ORDER BY rating.imdb_rating DESC
+GROUP BY specs.release_year
+ORDER BY  avg (rating.imdb_rating) DESC
 LIMIT 1;
 
---answer: 2008
+--answer: 1991
 
 
 --3.What is the highest grossing G-rated movie? Which company distributed it?
@@ -29,9 +30,9 @@ LIMIT 1;
 
 SELECT specs.film_title, specs.mpaa_rating, revenue.worldwide_gross, distributors.company_name
 FROM specs
-LEFT JOIN revenue
+INNER JOIN revenue
 USING (movie_id)
-LEFT JOIN distributors
+INNER JOIN distributors
 ON specs.domestic_distributor_id = distributors.distributor_id
 WHERE mpaa_rating IN ('G') 
 ORDER BY worldwide_gross DESC
@@ -45,20 +46,20 @@ ORDER BY worldwide_gross DESC
 
 SELECT company_name, COUNT(specs.movie_id)
 FROM specs
-FULL JOIN distributors
+LEFT JOIN distributors
 ON distributors.distributor_id = specs.domestic_distributor_id
-WHERE company_name IS NOT NULL 
 GROUP BY company_name
+ORDER BY COUNT(specs.movie_id)
 
 
 --5.Write a query that returns the five distributors with the highest average movie budget.
 
 
-SELECT avg (revenue.film_budget), distributors.company_name
+SELECT distributors.company_name, avg (revenue.film_budget)
 FROM specs
-LEFT JOIN revenue
+INNER JOIN revenue
 USING (movie_id)
-LEFT JOIN distributors
+INNER JOIN distributors
 ON specs.domestic_distributor_id = distributors.distributor_id
 WHERE film_budget IS NOT NULL 
 GROUP BY distributors.company_name
@@ -71,9 +72,9 @@ LIMIT 5;
 
 SELECT distributors.company_name,specs.film_title, rating.imdb_rating,distributors.headquarters
 FROM specs
-LEFT JOIN distributors
+INNER JOIN distributors
 ON specs.domestic_distributor_id = distributors.distributor_id
-LEFT JOIN rating
+INNER JOIN rating
 USING (movie_id)
 WHERE distributors.headquarters NOT ILIKE  '%, CA%' 
 GROUP BY distributors.company_name, rating.imdb_rating, distributors.headquarters,specs.film_title
@@ -81,12 +82,12 @@ ORDER BY rating.imdb_rating DESC
 
 --answer: 2, Dirty Dancing 
 
-7.Which have a higher average rating, movies which are over two hours long or movies which are under two hours?
+--7.Which have a higher average rating, movies which are over two hours long or movies which are under two hours?
 
 
 SELECT movie_length, avg(imdb_rating)
 FROM rating 
-LEFT JOIN (
+INNER JOIN (
  	SELECT CASE 
 	WHEN length_in_min  > 120 then 'OVER 120'
 	WHEN length_in_min < 120 then 'UNDER 120'
@@ -99,3 +100,14 @@ GROUP BY movie_length
 
 --answer: over 120
 
+SELECT 
+	CASE
+	 WHEN length_in_min  > 120 then 'OVER 120'
+	 WHEN length_in_min < 120 then 'UNDER 120'
+	 ELSE '120' 
+	 END AS under_over_2_hours,
+	 ROUND (AVG(imdb_rating),2)
+FROM specs
+INNER JOIN rating
+USING (movie_id)
+GROUP BY under_over_2_hours
